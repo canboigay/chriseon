@@ -494,14 +494,14 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                             })}
                         </div>
 
-                        {currentArtifact.score.meta?.words && (
+                        {currentArtifact.score.meta?.words ? (
                           <div className="mt-4 pt-4 border-t" style={{ borderColor: "rgba(var(--chr-border), 0.5)" }}>
                             <div className="flex justify-between text-xs">
                               <span style={{ color: "rgb(var(--chr-muted))" }}>Word Count</span>
-                              <span className="font-mono">{currentArtifact.score.meta.words}</span>
+                              <span className="font-mono">{String(currentArtifact.score.meta.words)}</span>
                             </div>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </>
