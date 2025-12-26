@@ -12,6 +12,7 @@ services:
     plan: starter
     region: oregon
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
   # API Service
   - type: web
