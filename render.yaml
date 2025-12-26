@@ -2,14 +2,14 @@ databases:
   - name: chriseon-db
     databaseName: chriseon
     user: chriseon
-    plan: starter
+    plan: free
     region: oregon
 
 services:
   # Redis
   - type: redis
     name: chriseon-redis
-    plan: starter
+    plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
@@ -19,7 +19,7 @@ services:
     name: chriseon-api
     runtime: python
     region: oregon
-    plan: starter
+    plan: free
     buildCommand: pip install -r services/api/requirements.txt
     startCommand: uvicorn app.main:app --app-dir services/api --host 0.0.0.0 --port $PORT
     envVars:
@@ -52,7 +52,7 @@ services:
     name: chriseon-worker
     runtime: python
     region: oregon
-    plan: starter
+    plan: free
     buildCommand: pip install -r services/worker/requirements.txt
     startCommand: PYTHONUNBUFFERED=1 PYTHONPATH=services/worker python -m worker
     envVars:
@@ -85,7 +85,7 @@ services:
     name: chriseon-web
     runtime: node
     region: oregon
-    plan: starter
+    plan: free
     rootDir: apps/web
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
