@@ -16,12 +16,11 @@ from app.routes.settings import router as settings_router
 def create_app() -> FastAPI:
     app = FastAPI(title="chriseon-api")
 
-    # Local dev CORS.
-    # Use allow_origin_regex so Next can run on 3000/3001/etc.
+    # CORS: Allow localhost for dev and Render URLs for production
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[],
-        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://.*\.onrender\.com$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
