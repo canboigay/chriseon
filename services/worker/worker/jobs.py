@@ -34,6 +34,7 @@ def _provider_generate(
     tools: list | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback=None,
 ):
     """Core provider generation logic (no multiprocessing).
 
@@ -50,6 +51,7 @@ def _provider_generate(
             tools=tools,
             tool_context=tool_context,
             max_output_tokens=max_output_tokens,
+            stream_callback=stream_callback,
         )
     if provider == "anthropic":
         from worker.providers import anthropic_provider
@@ -62,6 +64,7 @@ def _provider_generate(
             tools=tools,
             tool_context=tool_context,
             max_output_tokens=max_output_tokens,
+            stream_callback=stream_callback,
         )
     if provider == "gemini":
         from worker.providers import gemini_provider
@@ -74,6 +77,7 @@ def _provider_generate(
             tools=tools,
             tool_context=tool_context,
             max_output_tokens=max_output_tokens,
+            stream_callback=stream_callback,
         )
     if provider == "xai":
         from worker.providers import xai_provider
@@ -86,6 +90,7 @@ def _provider_generate(
             tools=tools,
             tool_context=tool_context,
             max_output_tokens=max_output_tokens,
+            stream_callback=stream_callback,
         )
 
     raise ValueError(f"unsupported provider: {provider}")
@@ -139,6 +144,7 @@ def _generate_with_timeout(
     tools: list | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback=None,
 ) -> tuple[str, dict, str | None, list | None]:
     """Return (text, usage, error, tool_calls).
 
@@ -157,6 +163,7 @@ def _generate_with_timeout(
                 tools=tools,
                 tool_context=tool_context,
                 max_output_tokens=max_output_tokens,
+                stream_callback=stream_callback,
             )
             return str(text or ""), dict(usage or {}), None, tool_calls
         except Exception as e:
@@ -405,7 +412,23 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                 tool_context_accumulated = ""
                 combined_usage = {}
                 
+                # Create streaming callback to publish chunks
+                def stream_chunk(chunk: str):
+                    publish_event(
+                        run_id,
+                        "artifact.chunk",
+                        {
+                            "run_id": run_id,
+                            "artifact_id": str(art.id),
+                            "pass_index": pass_index,
+                            "chunk": chunk,
+                        },
+                    )
+                
                 for iteration in range(max_tool_iterations):
+                    # Only stream on first iteration (subsequent iterations are tool calls)
+                    callback = stream_chunk if iteration == 0 else None
+                    
                     text, usage, gen_err, tool_calls = _generate_with_timeout(
                         provider=provider,
                         model=model,
@@ -416,6 +439,7 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                         tools=AVAILABLE_TOOLS,
                         tool_context=tool_context_accumulated if tool_context_accumulated else None,
                         max_output_tokens=max_output_tokens,
+                        stream_callback=callback,
                     )
                     
                     # Accumulate usage

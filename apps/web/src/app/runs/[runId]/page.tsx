@@ -186,6 +186,9 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [activeTab, setActiveTab] = useState<number>(1);
   const [events, setEvents] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Streaming text: passIndex -> accumulated text
+  const [streamingText, setStreamingText] = useState<Record<number, string>>({});
 
   const isWaitingForWorker =
     status === "queued" && artifacts.length === 0 && events.length === 0;
@@ -260,6 +263,18 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       if (e.type === "run.started") setStatus("running");
       if (e.type === "run.completed") setStatus("completed");
 
+      // Handle streaming chunks
+      if (e.type === "artifact.chunk" && payload) {
+        const passIndex = typeof payload.pass_index === "number" ? payload.pass_index : null;
+        const chunk = typeof payload.chunk === "string" ? payload.chunk : "";
+        if (passIndex != null && chunk) {
+          setStreamingText((prev) => ({
+            ...prev,
+            [passIndex]: (prev[passIndex] || "") + chunk,
+          }));
+        }
+      }
+      
       // Real-time animation driver.
       if (payload) {
         const passIndex = typeof payload.pass_index === "number" ? payload.pass_index : null;
@@ -272,7 +287,11 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             if (typeof payload.model_id === "string") next[idx].modelId = payload.model_id;
 
             if (e.type === "artifact.planned") next[idx].phase = "planned";
-            if (e.type === "artifact.started") next[idx].phase = "generating";
+            if (e.type === "artifact.started") {
+              next[idx].phase = "generating";
+              // Clear streaming text for this pass when starting
+              setStreamingText((prev) => ({ ...prev, [passIndex]: "" }));
+            }
             if (e.type === "score.started") next[idx].phase = "scoring";
 
             if (e.type === "artifact.error") {
@@ -313,6 +332,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       "run.completed",
       "artifact.planned",
       "artifact.started",
+      "artifact.chunk",
       "artifact.created",
       "artifact.error",
       "score.started",
@@ -518,6 +538,13 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                   <div className="chr-card min-h-[500px] p-6 md:p-10">
                     <div className="chr-markdown max-w-none text-base leading-relaxed">
                       <ReactMarkdown>{currentArtifact.output_text as string}</ReactMarkdown>
+                    </div>
+                  </div>
+                ) : streamingText[activeTab] ? (
+                  <div className="chr-card min-h-[500px] p-6 md:p-10">
+                    <div className="chr-markdown max-w-none text-base leading-relaxed">
+                      <ReactMarkdown>{streamingText[activeTab]}</ReactMarkdown>
+                      <span className="animate-pulse ml-1">▋</span>
                     </div>
                   </div>
                 ) : (

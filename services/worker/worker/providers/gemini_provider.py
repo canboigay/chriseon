@@ -15,6 +15,7 @@ def generate(
     tools: list[dict[str, Any]] | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback: Any | None = None,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]] | None]:
     """
     Generate response with optional tool calling support.
@@ -57,6 +58,16 @@ def generate(
     if config is not None:
         kwargs["config"] = config
 
+    # Enable streaming if callback provided
+    if stream_callback:
+        output_text = ""
+        for chunk in client.models.generate_content_stream(**kwargs):
+            if hasattr(chunk, 'text') and chunk.text:
+                output_text += chunk.text
+                stream_callback(chunk.text)
+        return output_text, {}, None
+    
+    # Non-streaming path
     resp = client.models.generate_content(**kwargs)
     
     # Extract text and tool calls

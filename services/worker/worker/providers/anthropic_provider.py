@@ -14,6 +14,7 @@ def generate(
     tools: list[dict[str, Any]] | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback: Any | None = None,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]] | None]:
     """
     Generate response with optional tool calling support.
@@ -48,6 +49,19 @@ def generate(
     if anthropic_tools:
         kwargs["tools"] = anthropic_tools
     
+    # Enable streaming if callback provided
+    if stream_callback:
+        kwargs["stream"] = True
+        output_text = ""
+        
+        with client.messages.stream(**kwargs) as stream:
+            for text in stream.text_stream:
+                output_text += text
+                stream_callback(text)
+        
+        return output_text, {}, None
+    
+    # Non-streaming path
     msg = client.messages.create(**kwargs)
     
     # Extract text and tool calls

@@ -14,9 +14,13 @@ def generate(
     tools: list[dict[str, Any]] | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback: Any | None = None,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]] | None]:
     """
     Generate response with optional tool calling support.
+    
+    Args:
+        stream_callback: Optional callback function(chunk: str) called for each streamed chunk
     
     Returns:
         (output_text, usage_dict, tool_calls or None)
@@ -43,6 +47,22 @@ def generate(
     if max_output_tokens is not None:
         kwargs["max_tokens"] = int(max_output_tokens)
 
+    # Enable streaming if callback provided
+    if stream_callback:
+        kwargs["stream"] = True
+        output_text = ""
+        tool_calls = None
+        
+        for chunk in client.chat.completions.create(**kwargs):
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                output_text += delta.content
+                stream_callback(delta.content)
+        
+        # Note: streaming doesn't return usage or tool_calls reliably
+        return output_text, {}, tool_calls
+    
+    # Non-streaming path (original behavior)
     resp = client.chat.completions.create(**kwargs)
     
     message = resp.choices[0].message

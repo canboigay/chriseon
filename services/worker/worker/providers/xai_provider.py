@@ -15,6 +15,7 @@ def generate(
     tools: list[dict[str, Any]] | None = None,
     tool_context: str | None = None,
     max_output_tokens: int | None = None,
+    stream_callback: Any | None = None,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]] | None]:
     """
     Generate response with optional tool calling support.
