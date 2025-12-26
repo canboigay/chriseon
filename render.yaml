@@ -1,0 +1,100 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: chriseon-db
+    env: docker
+    plan: starter
+    region: oregon
+    ipAllowList: []
+
+  # Redis
+  - type: redis
+    name: chriseon-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  # API Service
+  - type: web
+    name: chriseon-api
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r services/api/requirements.txt
+    startCommand: uvicorn app.main:app --app-dir services/api --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chriseon-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chriseon-redis
+          property: connectionString
+      - key: KEY_ENCRYPTION_MASTER_KEY_B64
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: CHRSEON_ENV
+        value: production
+
+  # Worker Service
+  - type: worker
+    name: chriseon-worker
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r services/worker/requirements.txt
+    startCommand: PYTHONUNBUFFERED=1 PYTHONPATH=services/worker python -m worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chriseon-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chriseon-redis
+          property: connectionString
+      - key: KEY_ENCRYPTION_MASTER_KEY_B64
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: CHRSEON_ENV
+        value: production
+
+  # Web Service (Next.js)
+  - type: web
+    name: chriseon-web
+    runtime: node
+    region: oregon
+    plan: starter
+    rootDir: apps/web
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        fromService:
+          type: web
+          name: chriseon-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NODE_ENV
+        value: production

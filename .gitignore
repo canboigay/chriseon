@@ -1,0 +1,23 @@
+.DS_Store
+
+# env
+.env
+
+# node
+node_modules/
+.pnp.cjs
+.next/
+dist/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+**/.venv/
+
+# logs
+*.log
+
+# IDE
+.vscode/
+.idea/

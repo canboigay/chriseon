@@ -1,0 +1,18 @@
+{
+  "name": "chriseon",
+  "private": true,
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "concurrently --names api,worker,web --prefix-colors blue,green,magenta --kill-others-on-fail \"pnpm -s dev:api\" \"pnpm -s dev:worker\" \"pnpm -s dev:web\"",
+    "dev:api": "services/api/.venv/bin/uvicorn app.main:app --app-dir services/api --reload --port ${CHRISEON_API_PORT:-8090}",
+    "dev:worker": "PYTHONUNBUFFERED=1 PYTHONPATH=services/worker services/worker/.venv/bin/python -m worker",
+    "dev:web": "wait-on --httpTimeout 60000 http-get://localhost:${CHRISEON_API_PORT:-8090}/v1/info && rm -rf apps/web/.next/dev/lock && pnpm -C apps/web exec next dev -p ${CHRISEON_WEB_PORT:-3000}",
+    "web:dev": "pnpm -C apps/web dev",
+    "web:build": "pnpm -C apps/web build",
+    "web:lint": "pnpm -C apps/web lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "wait-on": "^9.0.3"
+  }
+}
