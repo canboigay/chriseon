@@ -517,7 +517,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                 {currentArtifact ? (
                   <div className="chr-card min-h-[500px] p-6 md:p-10">
                     <div className="chr-markdown max-w-none text-base leading-relaxed">
-                      <ReactMarkdown>{currentArtifact.output_text}</ReactMarkdown>
+                      <ReactMarkdown>{currentArtifact.output_text as string}</ReactMarkdown>
                     </div>
                   </div>
                 ) : (
