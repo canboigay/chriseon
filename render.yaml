@@ -1,11 +1,11 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: chriseon-db
-    env: docker
+databases:
+  - name: chriseon-db
+    databaseName: chriseon
+    user: chriseon
     plan: starter
     region: oregon
 
+services:
   # Redis
   - type: redis
     name: chriseon-redis
