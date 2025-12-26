@@ -5,7 +5,6 @@ services:
     env: docker
     plan: starter
     region: oregon
-    ipAllowList: []
 
   # Redis
   - type: redis
@@ -13,7 +12,6 @@ services:
     plan: starter
     region: oregon
     maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
 
   # API Service
   - type: web
