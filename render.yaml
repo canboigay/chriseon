@@ -20,8 +20,8 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: pip install -r services/api/requirements.txt
-    startCommand: uvicorn app.main:app --app-dir services/api --host 0.0.0.0 --port $PORT
+    buildCommand: cd services/api && pip install -r requirements.txt
+    startCommand: cd services/api && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -53,8 +53,8 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: pip install -r services/worker/requirements.txt
-    startCommand: PYTHONUNBUFFERED=1 PYTHONPATH=services/worker python -m worker
+    buildCommand: cd services/worker && pip install -r requirements.txt
+    startCommand: cd services/worker && PYTHONUNBUFFERED=1 python -m worker
     envVars:
       - key: DATABASE_URL
         fromDatabase:
