@@ -10,7 +10,13 @@ from worker.settings import get_settings
 
 def get_engine():
     settings = get_settings()
-    return create_engine(settings.database_url, pool_pre_ping=True)
+    # Ensure we use psycopg (not psycopg2) driver
+    db_url = settings.database_url
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    elif db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    return create_engine(db_url, pool_pre_ping=True)
 
 
 @contextmanager
