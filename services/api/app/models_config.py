@@ -82,7 +82,7 @@ AVAILABLE_MODELS: list[ModelInfo] = [
     
     # Google Gemini Models
     {
-        "id": "gemini:gemini-2.0-flash",
+        "id": "gemini:gemini-2.0-flash-exp",
         "name": "Gemini 2.0 Flash",
         "provider": "gemini",
         "description": "Latest fast Gemini model with multimodal capabilities",
@@ -90,7 +90,7 @@ AVAILABLE_MODELS: list[ModelInfo] = [
         "recommended_for": ["draft", "refine", "synthesis"],
     },
     {
-        "id": "gemini:gemini-1.5-pro",
+        "id": "gemini:gemini-1.5-pro-latest",
         "name": "Gemini 1.5 Pro",
         "provider": "gemini",
         "description": "Advanced Gemini model with 2M token context",
@@ -98,7 +98,7 @@ AVAILABLE_MODELS: list[ModelInfo] = [
         "recommended_for": ["refine", "synthesis"],
     },
     {
-        "id": "gemini:gemini-1.5-flash",
+        "id": "gemini:gemini-1.5-flash-latest",
         "name": "Gemini 1.5 Flash",
         "provider": "gemini",
         "description": "Fast and efficient Gemini model",
@@ -139,6 +139,24 @@ AVAILABLE_MODELS: list[ModelInfo] = [
         "supports_tools": False,
         "recommended_for": ["draft"],
     },
+    
+    # DeepSeek Models
+    {
+        "id": "deepseek:deepseek-chat",
+        "name": "DeepSeek Chat",
+        "provider": "deepseek",
+        "description": "DeepSeek's main chat model, cost-effective and capable",
+        "supports_tools": True,
+        "recommended_for": ["draft", "refine", "synthesis"],
+    },
+    {
+        "id": "deepseek:deepseek-reasoner",
+        "name": "DeepSeek Reasoner",
+        "provider": "deepseek",
+        "description": "Advanced reasoning model with chain-of-thought capabilities",
+        "supports_tools": True,
+        "recommended_for": ["refine", "synthesis"],
+    },
 ]
 
 
@@ -168,7 +186,7 @@ POSITIONS = [
 # Default model selections
 DEFAULT_SELECTIONS = {
     "a": "xai:grok-3",
-    "b": "gemini:gemini-2.0-flash",
+    "b": "deepseek:deepseek-chat",
     "c": "xai:grok-4-0709",
 }
 

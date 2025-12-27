@@ -92,6 +92,19 @@ def _provider_generate(
             max_output_tokens=max_output_tokens,
             stream_callback=stream_callback,
         )
+    if provider == "deepseek":
+        from worker.providers import deepseek_provider
+
+        return deepseek_provider.generate(
+            model,
+            instructions,
+            user_input,
+            api_key,
+            tools=tools,
+            tool_context=tool_context,
+            max_output_tokens=max_output_tokens,
+            stream_callback=stream_callback,
+        )
 
     raise ValueError(f"unsupported provider: {provider}")
 
