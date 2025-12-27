@@ -290,7 +290,7 @@ export default function Home() {
                         ).map((model) => {
                           const isRecommended = model.recommended_for.includes(pos.role);
                           const toolsLabel = model.supports_tools ? " [Tools]" : "";
-                          const recommendedLabel = isRecommended ? " ⭐" : "";
+                          const recommendedLabel = isRecommended ? " [Recommended]" : "";
                           
                           return (
                             <option key={model.id} value={model.id}>
