@@ -28,7 +28,7 @@ def generate(
     # DeepSeek uses OpenAI-compatible API at api.deepseek.com
     client = OpenAI(
         api_key=api_key,
-        base_url="https://api.deepseek.com"
+        base_url="https://api.deepseek.com/v1"
     )
     
     # Build full prompt with tool context if provided
