@@ -124,6 +124,7 @@ type EventPayload = {
   total?: unknown;
   data?: unknown;
   chunk?: unknown;
+  approx_tokens?: unknown;
 };
 
 function isObject(v: unknown): v is Record<string, unknown> {
