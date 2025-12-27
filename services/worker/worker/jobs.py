@@ -412,8 +412,14 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                 tool_context_accumulated = ""
                 combined_usage = {}
                 
-                # Create streaming callback to publish chunks
+                # Create streaming callback to publish chunks and track progress
+                streaming_state = {"total_chunks": 0, "approx_tokens": 0}
+                
                 def stream_chunk(chunk: str):
+                    streaming_state["total_chunks"] += 1
+                    # Rough approximation: ~4 chars per token
+                    streaming_state["approx_tokens"] = len("".join([chunk])) // 4
+                    
                     publish_event(
                         run_id,
                         "artifact.chunk",
@@ -424,6 +430,20 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                             "chunk": chunk,
                         },
                     )
+                    
+                    # Publish progress update every 10 chunks
+                    if streaming_state["total_chunks"] % 10 == 0:
+                        publish_event(
+                            run_id,
+                            "artifact.progress",
+                            {
+                                "run_id": run_id,
+                                "artifact_id": str(art.id),
+                                "pass_index": pass_index,
+                                "chunks_received": streaming_state["total_chunks"],
+                                "approx_tokens": streaming_state["approx_tokens"],
+                            },
+                        )
                 
                 for iteration in range(max_tool_iterations):
                     # Only stream on first iteration (subsequent iterations are tool calls)
@@ -495,6 +515,8 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                         "model_id": art.model_id,
                         "latency_ms": art.latency_ms,
                         "credential_mode": mode_used,
+                        "output_tokens": usage.get("output_tokens", 0) if usage else 0,
+                        "input_tokens": usage.get("input_tokens", 0) if usage else 0,
                     },
                 )
 

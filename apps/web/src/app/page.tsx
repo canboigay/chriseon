@@ -26,6 +26,9 @@ export default function Home() {
     "brief" | "standard" | "comprehensive"
   >("standard");
   const [stagePrompts, setStagePrompts] = useState<Record<string, string>>({});
+  const [temperature, setTemperature] = useState<number>(0.7);
+  const [topP, setTopP] = useState<number>(0.9);
+  const [maxToolIterations, setMaxToolIterations] = useState<number>(3);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +66,12 @@ export default function Home() {
     try {
       const run = await createRun({
         query,
-        header_prompt: { instructions },
+        header_prompt: { 
+          instructions,
+          temperature,
+          top_p: topP,
+          max_tool_iterations: maxToolIterations,
+        },
         selected_models: selectedModels,
         output_length: outputLength,
         stage_prompts: stagePrompts,
@@ -334,9 +342,135 @@ export default function Home() {
                 Advanced options
               </summary>
               <div className="text-xs mt-1" style={{ color: "rgb(var(--chr-muted))" }}>
-                These instructions are appended per stage and won’t remove Chriseon’s built-in chaining prompts.
+                Fine-tune generation parameters and add custom instructions per stage.
               </div>
-              <div className="flex flex-col gap-3 mt-3">
+              
+              {/* Quality Presets */}
+              <div className="mt-4">
+                <div className="text-sm font-medium mb-2" style={{ color: "rgb(var(--chr-ink))" }}>
+                  Quality Presets
+                </div>
+                <div className="flex gap-2">
+                  {[
+                    { label: "Creative", temp: 0.9, topP: 0.95, desc: "More varied, imaginative outputs" },
+                    { label: "Balanced", temp: 0.7, topP: 0.9, desc: "Good mix of creativity and accuracy" },
+                    { label: "Precise", temp: 0.3, topP: 0.7, desc: "More focused, deterministic outputs" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setTemperature(preset.temp);
+                        setTopP(preset.topP);
+                      }}
+                      className="px-3 py-2 rounded-lg text-xs border flex-1"
+                      style={{
+                        borderColor: temperature === preset.temp ? "rgba(100, 200, 150, 0.55)" : "rgba(255,255,255,0.12)",
+                        background: temperature === preset.temp ? "rgba(100, 200, 150, 0.12)" : "rgba(255,255,255,0.02)",
+                        color: "rgb(var(--chr-ink))",
+                      }}
+                      title={preset.desc}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Model Parameters */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Temperature */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium" style={{ color: "rgb(var(--chr-ink))" }}>
+                      Temperature
+                    </label>
+                    <span className="text-xs font-mono" style={{ color: "rgb(var(--chr-muted))" }}>
+                      {temperature.toFixed(2)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={temperature}
+                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                    className="w-full"
+                    style={{
+                      accentColor: "rgb(var(--chr-ink))",
+                    }}
+                  />
+                  <div className="text-[10px]" style={{ color: "rgb(var(--chr-muted))" }}>
+                    Lower = more focused, Higher = more creative
+                  </div>
+                </div>
+                
+                {/* Top P */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium" style={{ color: "rgb(var(--chr-ink))" }}>
+                      Top P
+                    </label>
+                    <span className="text-xs font-mono" style={{ color: "rgb(var(--chr-muted))" }}>
+                      {topP.toFixed(2)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={topP}
+                    onChange={(e) => setTopP(parseFloat(e.target.value))}
+                    className="w-full"
+                    style={{
+                      accentColor: "rgb(var(--chr-ink))",
+                    }}
+                  />
+                  <div className="text-[10px]" style={{ color: "rgb(var(--chr-muted))" }}>
+                    Controls diversity of token selection
+                  </div>
+                </div>
+              </div>
+              
+              {/* Research Depth */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium" style={{ color: "rgb(var(--chr-ink))" }}>
+                    Research Depth
+                  </label>
+                  <span className="text-xs font-mono" style={{ color: "rgb(var(--chr-muted))" }}>
+                    {maxToolIterations} {maxToolIterations === 1 ? "iteration" : "iterations"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={maxToolIterations}
+                  onChange={(e) => setMaxToolIterations(parseInt(e.target.value))}
+                  className="w-full"
+                  style={{
+                    accentColor: "rgb(var(--chr-ink))",
+                  }}
+                />
+                <div className="text-[10px]" style={{ color: "rgb(var(--chr-muted))" }}>
+                  How many tool-calling rounds models can perform for research (only applies to tool-enabled models)
+                </div>
+              </div>
+              
+              {/* Stage-specific prompts */}
+              <div className="mt-4">
+                <div className="text-sm font-medium mb-2" style={{ color: "rgb(var(--chr-ink))" }}>
+                  Per-Stage Instructions
+                </div>
+                <div className="text-xs mb-3" style={{ color: "rgb(var(--chr-muted))" }}>
+                  Optional custom instructions appended to each stage (won't override built-in prompts)
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
                 {positions?.map((pos) => (
                   <label key={`stage-prompt-${pos.slot}`} className="flex flex-col gap-2">
                     <span className="text-sm font-medium" style={{ color: "rgb(var(--chr-ink))" }}>

@@ -190,6 +190,8 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   
   // Streaming text: passIndex -> accumulated text
   const [streamingText, setStreamingText] = useState<Record<number, string>>({});
+  // Streaming metadata: track chunks and timing
+  const [streamingMeta, setStreamingMeta] = useState<Record<number, { chunkCount: number; startTime: number; approxTokens?: number }>>({});
 
   const isWaitingForWorker =
     status === "queued" && artifacts.length === 0 && events.length === 0;
@@ -273,6 +275,33 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             ...prev,
             [passIndex]: (prev[passIndex] || "") + chunk,
           }));
+          
+          // Track streaming metadata
+          setStreamingMeta((prev) => {
+            const existing = prev[passIndex];
+            if (!existing) {
+              return {
+                ...prev,
+                [passIndex]: { chunkCount: 1, startTime: Date.now() },
+              };
+            }
+            return {
+              ...prev,
+              [passIndex]: { ...existing, chunkCount: existing.chunkCount + 1 },
+            };
+          });
+        }
+      }
+      
+      // Handle progress updates
+      if (e.type === "artifact.progress" && payload) {
+        const passIndex = typeof payload.pass_index === "number" ? payload.pass_index : null;
+        const approxTokens = typeof payload.approx_tokens === "number" ? payload.approx_tokens : 0;
+        if (passIndex != null) {
+          setStreamingMeta((prev) => ({
+            ...prev,
+            [passIndex]: { ...prev[passIndex], approxTokens },
+          }));
         }
       }
       
@@ -290,8 +319,9 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             if (e.type === "artifact.planned") next[idx].phase = "planned";
             if (e.type === "artifact.started") {
               next[idx].phase = "generating";
-              // Clear streaming text for this pass when starting
+              // Clear streaming text and metadata for this pass when starting
               setStreamingText((prev) => ({ ...prev, [passIndex]: "" }));
+              setStreamingMeta((prev) => ({ ...prev, [passIndex]: { chunkCount: 0, startTime: Date.now() } }));
             }
             if (e.type === "score.started") next[idx].phase = "scoring";
 
@@ -334,6 +364,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       "artifact.planned",
       "artifact.started",
       "artifact.chunk",
+      "artifact.progress",
       "artifact.created",
       "artifact.error",
       "score.started",
@@ -770,9 +801,43 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                   </div>
                 ) : streamingText[activeTab] ? (
                   <div className="chr-card min-h-[500px] p-6 md:p-10">
+                    {/* Streaming speed indicator */}
+                    {(() => {
+                      const meta = streamingMeta[activeTab];
+                      if (!meta) return null;
+                      
+                      const elapsedSeconds = (Date.now() - meta.startTime) / 1000;
+                      const chunkRate = elapsedSeconds > 0 ? (meta.chunkCount / elapsedSeconds).toFixed(1) : "0.0";
+                      const wordCount = streamingText[activeTab].split(/\s+/).length;
+                      const approxTokens = meta.approxTokens || Math.floor(wordCount * 1.3); // Rough estimate
+                      const tokensPerSec = elapsedSeconds > 0 ? (approxTokens / elapsedSeconds).toFixed(1) : "0.0";
+                      
+                      return (
+                        <div 
+                          className="mb-4 flex items-center gap-4 text-xs pb-3 border-b"
+                          style={{ 
+                            borderColor: "rgba(var(--chr-border), 0.4)",
+                            color: "rgb(var(--chr-muted))",
+                            fontFamily: "var(--chr-font-mono)",
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span>Streaming</span>
+                          </div>
+                          <div>•</div>
+                          <div>{tokensPerSec} tokens/sec</div>
+                          <div>•</div>
+                          <div>~{approxTokens} tokens</div>
+                          <div>•</div>
+                          <div>{wordCount} words</div>
+                        </div>
+                      );
+                    })()}
+                    
                     <div className="chr-markdown max-w-none text-base leading-relaxed">
                       <ReactMarkdown>{streamingText[activeTab]}</ReactMarkdown>
-                      <span className="animate-pulse ml-1">▋</span>
+                      <span className="chr-cursor">▋</span>
                     </div>
                   </div>
                 ) : (
