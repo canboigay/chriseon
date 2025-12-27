@@ -123,6 +123,7 @@ type EventPayload = {
   error?: unknown;
   total?: unknown;
   data?: unknown;
+  chunk?: unknown;
 };
 
 function isObject(v: unknown): v is Record<string, unknown> {
