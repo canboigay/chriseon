@@ -383,7 +383,7 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                     # Pass 2: Refine the draft
                     if artifact_a and artifact_a.output_text:
                         base_prompt = (
-                            f"Original request: {run.query}\n\n"
+                            f"Original request (with context): {augmented_query}\n\n"
                             f"Initial draft to improve:\n{artifact_a.output_text}\n\n"
                             "Please analyze the above draft and provide an improved, refined version. "
                             "Address gaps, improve clarity, and ensure correctness."
@@ -395,10 +395,10 @@ def execute_run(run_id: str, credential_mode: dict | None = None):
                     # Pass 3: Validate and create final version
                     if artifact_b and artifact_b.output_text:
                         base_prompt = (
-                            f"Original request: {run.query}\n\n"
+                            f"Original request (with context for fact-checking): {augmented_query}\n\n"
                             f"Refined response to validate:\n{artifact_b.output_text}\n\n"
-                            "Please review the above response against the original request. "
-                            "Verify it is accurate, complete, and well-structured. Provide the final, polished version."
+                            "Please review the above refined response against the original request and context. "
+                            "Fact-check the claims, verify accuracy and completeness, and provide the final polished version."
                         )
                     else:
                         base_prompt = augmented_query
