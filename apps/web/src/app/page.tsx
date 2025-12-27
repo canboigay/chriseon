@@ -279,13 +279,32 @@ export default function Home() {
                         {(modelsForPosition.length > 0
                           ? modelsForPosition
                           : allModels
-                        ).map((model) => (
-                          <option key={model.id} value={model.id}>
-                            {model.name} ({model.provider})
-                            {model.supports_tools ? " • Tools" : ""}
-                          </option>
-                        ))}
+                        ).map((model) => {
+                          const isRecommended = model.recommended_for.includes(pos.role);
+                          const toolsLabel = model.supports_tools ? " [Tools]" : "";
+                          const recommendedLabel = isRecommended ? " ⭐" : "";
+                          
+                          return (
+                            <option key={model.id} value={model.id}>
+                              {model.name} ({model.provider}){recommendedLabel}{toolsLabel}
+                            </option>
+                          );
+                        })}
                       </select>
+                      
+                      {/* Model info tooltip */}
+                      {currentModel && (
+                        <div 
+                          className="mt-2 text-xs p-2 rounded-lg border"
+                          style={{
+                            borderColor: "rgba(var(--chr-border), 0.5)",
+                            backgroundColor: "rgba(var(--chr-paper-wash), 0.5)",
+                            color: "rgb(var(--chr-muted))",
+                          }}
+                        >
+                          {currentModel.description}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

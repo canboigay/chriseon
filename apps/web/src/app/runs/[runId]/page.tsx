@@ -411,6 +411,133 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
           </div>
         ) : (
           <>
+            {/* Pipeline Visualization */}
+            <div className="chr-card p-6">
+              <div className="flex items-center justify-between gap-4">
+                {passStates.slice(0, 3).map((p, idx) => {
+                  const isActive = p.phase === "generating" || p.phase === "scoring";
+                  const isDone = p.phase === "done";
+                  const hasError = p.phase === "error";
+                  const isIdle = p.phase === "idle" || p.phase === "planned";
+                  
+                  let stageName = "Draft";
+                  let stageDesc = "Initial response";
+                  if (p.passIndex === 2) {
+                    stageName = "Refine";
+                    stageDesc = "Improve & clarify";
+                  } else if (p.passIndex === 3) {
+                    stageName = "Validate";
+                    stageDesc = "Check & finalize";
+                  }
+                  
+                  let borderColor = "rgba(var(--chr-border), 0.6)";
+                  let bgColor = "rgba(var(--chr-paper-wash), 0.3)";
+                  let iconColor = "rgb(var(--chr-muted))";
+                  let icon = "○";
+                  
+                  if (isDone) {
+                    borderColor = "rgba(34, 197, 94, 0.5)"; // green
+                    bgColor = "rgba(34, 197, 94, 0.08)";
+                    iconColor = "#22c55e";
+                    icon = "✓";
+                  } else if (hasError) {
+                    borderColor = "rgba(239, 68, 68, 0.5)"; // red
+                    bgColor = "rgba(239, 68, 68, 0.08)";
+                    iconColor = "#ef4444";
+                    icon = "✕";
+                  } else if (isActive) {
+                    borderColor = "rgba(59, 130, 246, 0.6)"; // blue
+                    bgColor = "rgba(59, 130, 246, 0.08)";
+                    iconColor = "#3b82f6";
+                    icon = "⋯";
+                  }
+                  
+                  return (
+                    <React.Fragment key={p.passIndex}>
+                      <div 
+                        className="flex-1 relative"
+                        style={{ minWidth: 0 }}
+                      >
+                        <div
+                          className={`rounded-lg border-2 p-4 transition-all duration-300 ${
+                            isActive ? "animate-pulse" : ""
+                          }`}
+                          style={{
+                            borderColor,
+                            backgroundColor: bgColor,
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div 
+                              className="text-2xl font-bold flex-shrink-0"
+                              style={{ color: iconColor }}
+                            >
+                              {icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="font-semibold text-sm"
+                                  style={{ color: "rgb(var(--chr-ink))" }}
+                                >
+                                  {stageName}
+                                </div>
+                                <div 
+                                  className="text-[10px] px-1.5 py-0.5 rounded"
+                                  style={{
+                                    fontFamily: "var(--chr-font-mono)",
+                                    backgroundColor: "rgba(var(--chr-border), 0.3)",
+                                    color: "rgb(var(--chr-muted))",
+                                  }}
+                                >
+                                  {p.passIndex}
+                                </div>
+                              </div>
+                              <div 
+                                className="text-xs truncate"
+                                style={{ color: "rgb(var(--chr-muted))" }}
+                                title={stageDesc}
+                              >
+                                {stageDesc}
+                              </div>
+                              {p.modelId && (
+                                <div 
+                                  className="text-[10px] mt-1 truncate"
+                                  style={{ 
+                                    fontFamily: "var(--chr-font-mono)",
+                                    color: "rgb(var(--chr-muted))",
+                                    opacity: 0.7,
+                                  }}
+                                  title={p.modelId}
+                                >
+                                  {p.modelId}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Arrow between stages */}
+                      {idx < 2 && (
+                        <div 
+                          className="flex items-center justify-center flex-shrink-0"
+                          style={{ width: "32px" }}
+                        >
+                          <div 
+                            className="text-xl"
+                            style={{ color: "rgb(var(--chr-muted))", opacity: 0.5 }}
+                          >
+                            →
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+            
             {/* Tabs */}
             <div className="flex items-center gap-2 border-b pb-1" style={{ borderColor: "rgba(var(--chr-border), 0.6)" }}>
               {passStates.map((p) => {
@@ -424,18 +551,30 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                 if (p.passIndex === 3) label = "3. Validate";
                 if (p.passIndex === 4) label = "4. Voice";
 
+                // Status indicator
+                let statusIndicator = null;
+                if (p.phase === "error") {
+                  statusIndicator = <span className="ml-2 text-red-500" title="Error">✕</span>;
+                } else if (p.phase === "done") {
+                  statusIndicator = <span className="ml-2 text-green-500" title="Completed">✓</span>;
+                } else if (p.phase === "generating" || p.phase === "scoring") {
+                  statusIndicator = <span className="ml-2 animate-pulse" title="Processing">⋯</span>;
+                }
+
                 return (
                   <button
                     key={p.passIndex}
                     onClick={() => setActiveTab(p.passIndex)}
-                    disabled={!hasArtifact && p.phase !== "generating" && p.phase !== "scoring"}
+                    disabled={!hasArtifact && p.phase !== "generating" && p.phase !== "scoring" && p.phase !== "error"}
                     className={`
                       relative px-4 py-2 text-sm font-medium transition-colors
                       ${isActive ? "text-[rgb(var(--chr-ink))]" : "text-[rgb(var(--chr-muted))] hover:text-[rgb(var(--chr-ink))]"}
-                      ${!hasArtifact && p.phase !== "generating" ? "opacity-50 cursor-not-allowed" : ""}
+                      ${!hasArtifact && p.phase !== "generating" && p.phase !== "error" ? "opacity-50 cursor-not-allowed" : ""}
+                      ${p.phase === "error" ? "text-red-500" : ""}
                     `}
                   >
                     {label}
+                    {statusIndicator}
                     {isActive && (
                       <div
                         className="absolute bottom-[-5px] left-0 h-[2px] w-full bg-[rgb(var(--chr-ink))]"
@@ -482,8 +621,36 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                         
                         <div className="mb-4">
                           <div className="text-xs mb-1" style={{ color: "rgb(var(--chr-muted))" }}>Total Score</div>
-                          <div className="text-2xl font-bold font-mono">
-                            {Math.round(currentArtifact.score.total * 100)}
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl font-bold font-mono">
+                              {Math.round(currentArtifact.score.total * 100)}
+                            </div>
+                            {(() => {
+                              const score = Math.round(currentArtifact.score.total * 100);
+                              let qualityLabel = "Poor";
+                              let qualityColor = "#ef4444"; // red
+                              
+                              if (score >= 80) {
+                                qualityLabel = "Excellent";
+                                qualityColor = "#22c55e"; // green
+                              } else if (score >= 60) {
+                                qualityLabel = "Good";
+                                qualityColor = "#eab308"; // yellow
+                              }
+                              
+                              return (
+                                <div
+                                  className="text-xs px-2 py-1 rounded-full font-medium"
+                                  style={{
+                                    backgroundColor: `${qualityColor}20`,
+                                    color: qualityColor,
+                                    border: `1px solid ${qualityColor}40`,
+                                  }}
+                                >
+                                  {qualityLabel}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -491,22 +658,29 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                           {currentArtifact.score.dimensions &&
                             Object.entries(currentArtifact.score.dimensions).map(([key, val]) => {
                               if (val === null || val === undefined) return null;
+                              
+                              // Color-code based on score value
+                              const pct = Math.round(val * 100);
+                              let barColor = "#ef4444"; // red for <60
+                              if (pct >= 80) barColor = "#22c55e"; // green for >=80
+                              else if (pct >= 60) barColor = "#eab308"; // yellow for 60-79
+                              
                               return (
                                 <div key={key}>
                                   <div className="flex justify-between text-[10px] uppercase tracking-wider mb-1" style={{ color: "rgb(var(--chr-muted))" }}>
                                     <span>{key.replace("_", " ")}</span>
-                                    <span>{Math.round(val * 100)}</span>
+                                    <span style={{ color: barColor, fontWeight: 600 }}>{pct}</span>
                                   </div>
                                   <div
                                     className="h-1.5 w-full overflow-hidden rounded-full"
                                     style={{ background: "rgba(var(--chr-border), 0.4)" }}
                                   >
                                     <div
-                                      className="h-full rounded-full"
+                                      className="h-full rounded-full transition-all duration-700"
                                       style={{
                                         width: `${clamp01(val) * 100}%`,
-                                        background: "rgb(var(--chr-ink))",
-                                        opacity: 0.7,
+                                        background: barColor,
+                                        opacity: 0.85,
                                       }}
                                     />
                                   </div>
@@ -535,7 +709,60 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
               {/* Right Content: Artifact Text */}
               <div className="min-w-0 flex-1">
-                {currentArtifact ? (
+                {/* Error State */}
+                {currentPassState?.phase === "error" && currentPassState.error ? (
+                  <div className="chr-card min-h-[300px] p-6 md:p-10">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="text-2xl">⚠️</div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-red-600 mb-2">Stage {activeTab} Failed</h3>
+                          <div 
+                            className="rounded-lg border px-4 py-3 text-sm font-mono"
+                            style={{
+                              borderColor: "rgba(180, 80, 50, 0.4)",
+                              background: "rgba(180, 80, 50, 0.08)",
+                              color: "rgb(var(--chr-ink))",
+                            }}
+                          >
+                            {currentPassState.error}
+                          </div>
+                          
+                          {/* Error suggestions */}
+                          <div className="mt-4 text-sm" style={{ color: "rgb(var(--chr-muted))" }}>
+                            <p className="font-semibold mb-2">Common solutions:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {currentPassState.error.includes("API key") || currentPassState.error.includes("key") ? (
+                                <li>Check that the API key is correctly configured in Settings</li>
+                              ) : null}
+                              {currentPassState.error.includes("timeout") ? (
+                                <li>The request took too long - try again or use a different model</li>
+                              ) : null}
+                              {currentPassState.error.includes("metadata") || currentPassState.error.includes("Illegal") ? (
+                                <li>API key may have hidden characters - try re-entering it</li>
+                              ) : null}
+                              <li>Try starting a new run with different model selections</li>
+                            </ul>
+                          </div>
+                          
+                          {/* Show previous stage impact */}
+                          {activeTab === 2 && (
+                            <div 
+                              className="mt-4 rounded-lg border px-3 py-2 text-xs"
+                              style={{
+                                borderColor: "rgba(255, 200, 100, 0.4)",
+                                background: "rgba(255, 200, 100, 0.08)",
+                                color: "rgb(var(--chr-muted))",
+                              }}
+                            >
+                              <strong>Note:</strong> Stage 3 (Validate) may be affected since it relies on the refined output from this stage.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : currentArtifact ? (
                   <div className="chr-card min-h-[500px] p-6 md:p-10">
                     <div className="chr-markdown max-w-none text-base leading-relaxed">
                       <ReactMarkdown>{currentArtifact.output_text as string}</ReactMarkdown>
@@ -555,6 +782,11 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                         <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full" />
                         <span>Generating pass {activeTab}...</span>
                         <NeuralTicker phase="generating" />
+                      </div>
+                    ) : currentPassState?.phase === "scoring" ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full" />
+                        <span>Scoring pass {activeTab}...</span>
                       </div>
                     ) : (
                       <span>Waiting for previous steps...</span>
