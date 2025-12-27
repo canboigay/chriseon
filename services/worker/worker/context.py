@@ -133,5 +133,5 @@ def extract_and_fetch_context(text: str) -> tuple[str, list[str]]:
         return text, []
 
     augmented_prompt = text + "\n\n" + "\n".join(context_parts)
-    augmented_prompt += "\n\n(Note: Use the fetched content above to answer the user's request.)"
+    augmented_prompt += "\n\n(Note: The content above is provided as reference context. Use it to help answer the user's original question, but focus on directly answering what they asked.)"
     return augmented_prompt, sources
