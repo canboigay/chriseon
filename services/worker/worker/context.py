@@ -132,6 +132,9 @@ def extract_and_fetch_context(text: str) -> tuple[str, list[str]]:
     if not context_parts:
         return text, []
 
-    augmented_prompt = text + "\n\n" + "\n".join(context_parts)
-    augmented_prompt += "\n\n(Note: The content above is provided as reference context. Use it to help answer the user's original question, but focus on directly answering what they asked.)"
+    # Put context AFTER the user's question to emphasize query priority
+    augmented_prompt = text
+    augmented_prompt += "\n\n--- REFERENCE CONTEXT (use only if relevant to answer the question above) ---"
+    augmented_prompt += "\n" + "\n".join(context_parts)
+    augmented_prompt += "\n--- END REFERENCE CONTEXT ---\n"
     return augmented_prompt, sources
